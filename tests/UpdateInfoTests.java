@@ -1,5 +1,7 @@
 package com.e7.bmfarm;
 import java.io.IOException;
+import java.nio.file.*;
+import java.nio.charset.StandardCharsets;
 public final class UpdateInfoTests {
  static String fixture="schema=1\npackageName=com.e7.bmfarm.mobile\nversionCode=4\nversionName=1.0.3\nchannel=preview\nreleaseUrl=https://github.com/longye-hub/epic7-bookmark-assistant/releases/tag/2026.10.13.2\ndownloadUrl=https://github.com/longye-hub/epic7-bookmark-assistant/releases/download/2026.10.13.2/epic7-mobile-v1.0.3.apk\nsha256="+new String(new char[64]).replace('\0','a')+"\nnotes=隐私加固与更新提醒\n";
  static int checks;
@@ -26,6 +28,14 @@ public final class UpdateInfoTests {
   reject(fixture.replace("notes=","notes=\u0000"));
   reject(fixture.replace("sha256=", "sha256=not-a-hash"));
   reject(fixture+new String(new char[17000]).replace('\0','x'));
+  if(args.length>0){
+   for(String variant:new String[]{"root","mobile"}){
+    String pkg="com.e7.bmfarm"+(variant.equals("mobile")?".mobile":"");
+    String live=new String(Files.readAllBytes(Paths.get(args[0],variant+".properties")),StandardCharsets.UTF_8);
+    UpdateInfo released=UpdateInfo.parse(live,pkg);
+    need(released.versionCode>0,"published manifest must pass the production parser: "+variant);
+   }
+  }
   System.out.println("UPDATE_INFO_PASS "+checks+" checks; fixed endpoints, strict metadata, origin, variant and version validation");
  }
 }

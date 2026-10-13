@@ -12,6 +12,7 @@ if($LASTEXITCODE -ne 0){throw 'Test compilation failed'}
 foreach($taskTest in @('LayoutTests','InputGuardTests','MascotTimelineTests','PrivacyTests','UpdateInfoTests','UpdateTransportTests')){
  [string[]]$taskArgs=@()
  if($taskTest -eq 'MascotTimelineTests'){$taskArgs=@((Join-Path $taskRoot 'tests/mascot-metadata.json'))}
+ if($taskTest -eq 'UpdateInfoTests'){$taskArgs=@((Join-Path $taskRoot 'updates'))}
  & (Join-Path $JavaHome 'bin/java.exe') '-Dfile.encoding=UTF-8' -cp $taskOut "com.e7.bmfarm.$taskTest" @taskArgs
  if($LASTEXITCODE -ne 0){throw "Test failed: $taskTest"}
 }
