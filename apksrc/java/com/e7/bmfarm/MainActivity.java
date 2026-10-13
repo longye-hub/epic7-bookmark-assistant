@@ -18,10 +18,13 @@ public class MainActivity extends Activity {
     private static final int RC_OVERLAY = 1001;
     private SharedPreferences noticePreferences;
     private Button go;
+    private UpdateUi updates;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FloatService.pauseForSettings();
+        try{TransientFiles.clearKnown(getCacheDir());}catch(java.io.IOException e){Toast.makeText(this,"旧截图缓存清理失败，请在系统设置清理本应用缓存",Toast.LENGTH_LONG).show();}
         noticePreferences = getSharedPreferences(UsageNotice.PREFERENCES, MODE_PRIVATE);
 
         LinearLayout root = new LinearLayout(this);
@@ -59,6 +62,7 @@ public class MainActivity extends Activity {
             }
         });
         root.addView(go);
+        updates=new UpdateUi(this,root);
 
         TextView noticeTitle = new TextView(this);
         noticeTitle.setText(UsageNotice.TITLE);
@@ -80,6 +84,7 @@ public class MainActivity extends Activity {
         android.widget.ScrollView scroll=new android.widget.ScrollView(this);
         scroll.setFillViewport(true);scroll.addView(root);setContentView(scroll);
         if (!hasAcknowledgedNotice()) showUsageNotice();
+        else updates.automatic();
     }
 
     private boolean hasAcknowledgedNotice() {
@@ -120,11 +125,13 @@ public class MainActivity extends Activity {
                     }
                     go.setEnabled(true);
                     dialog.dismiss();
+                    updates.automatic();
                 }));
         dialog.show();
     }
 
     private void startFloat() {
+        if(updates!=null)updates.cancel();
         if (!hasAcknowledgedNotice()) return;
         startService(new Intent(this, FloatService.class));
         Toast.makeText(this, "悬浮窗已开启", Toast.LENGTH_SHORT).show();
@@ -138,4 +145,6 @@ public class MainActivity extends Activity {
             startFloat();
         }
     }
+    @Override protected void onPause(){if(updates!=null)updates.cancel();super.onPause();}
+    @Override protected void onDestroy(){if(updates!=null)updates.destroy();super.onDestroy();}
 }

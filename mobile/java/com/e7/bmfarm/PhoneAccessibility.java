@@ -46,6 +46,25 @@ public final class PhoneAccessibility extends AccessibilityService {
   if(!done.await(2000,TimeUnit.MILLISECONDS))throw new IOException("前台窗口核对超时");
   if(error.get()!=null)throw error.get();return value.get();
  }
+ public static boolean[] captureForeground(String ownPackage)throws Exception{
+  PhoneAccessibility s=instance;if(s==null)throw new IOException("无障碍服务不可用");
+  CountDownLatch done=new CountDownLatch(1);AtomicReference<boolean[]> value=new AtomicReference<>();
+  s.main.post(()->{
+   boolean game=false,ownOverlay=false,visibleGame=false;
+   try{
+    for(AccessibilityWindowInfo w:s.getWindows()){
+     AccessibilityNodeInfo node=w.getRoot();if(node==null)continue;
+     try{
+      String pkg=node.getPackageName()==null?"":node.getPackageName().toString();
+      if(GAME.equals(pkg)&&w.getType()==AccessibilityWindowInfo.TYPE_APPLICATION){visibleGame=true;if(w.isFocused())game=true;}
+      if(w.isFocused()&&ownPackage.equals(pkg)&&w.getType()!=AccessibilityWindowInfo.TYPE_APPLICATION)ownOverlay=true;
+     }finally{node.recycle();}
+    }
+    value.set(new boolean[]{game,ownOverlay&&visibleGame});
+   }catch(RuntimeException e){value.set(new boolean[]{false,false});}finally{done.countDown();}
+  });
+  if(!done.await(2000,TimeUnit.MILLISECONDS)||value.get()==null)throw new IOException("前台核对超时");return value.get();
+ }
  public static void gesture(int x1,int y1,int x2,int y2,int duration,Rect expected,BooleanSupplier cancelled)throws Exception{
   PhoneAccessibility s=instance;if(s==null)throw new IOException("无障碍服务已断开");
   CountDownLatch done=new CountDownLatch(1);AtomicReference<Exception> error=new AtomicReference<>();

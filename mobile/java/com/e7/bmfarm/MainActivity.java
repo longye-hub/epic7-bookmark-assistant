@@ -20,10 +20,12 @@ public class MainActivity extends Activity {
     private boolean notificationAsked;
     private SharedPreferences noticePreferences;
     private Button go;
+    private UpdateUi updates;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FloatService.pauseForSettings();
         noticePreferences = getSharedPreferences(UsageNotice.PREFERENCES, MODE_PRIVATE);
 
         LinearLayout root = new LinearLayout(this);
@@ -58,6 +60,7 @@ public class MainActivity extends Activity {
         Button access=new Button(this);access.setText("② 无障碍服务");access.setOnClickListener(v->openSettings(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));root.addView(access);
         Button info=new Button(this);info.setText("应用系统信息 / 权限设置");info.setOnClickListener(v->openSettings(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()))));root.addView(info);
         root.addView(go);
+        updates=new UpdateUi(this,root);
 
         TextView noticeTitle = new TextView(this);
         noticeTitle.setText(UsageNotice.TITLE);
@@ -79,6 +82,7 @@ public class MainActivity extends Activity {
         android.widget.ScrollView scroll=new android.widget.ScrollView(this);
         scroll.setFillViewport(true);scroll.addView(root);setContentView(scroll);
         if (!hasAcknowledgedNotice()) showUsageNotice();
+        else updates.automatic();
     }
 
     private boolean hasAcknowledgedNotice() {
@@ -119,6 +123,7 @@ public class MainActivity extends Activity {
                     }
                     go.setEnabled(true);
                     dialog.dismiss();
+                    updates.automatic();
                 }));
         dialog.show();
     }
@@ -126,6 +131,7 @@ public class MainActivity extends Activity {
     private void openSettings(Intent intent){try{startActivity(intent);}catch(RuntimeException e){Toast.makeText(this,"请从手机设置进入本应用权限页",1).show();}}
     @Override protected void onResume(){super.onResume();if(permissions!=null)permissions.setText("悬浮窗："+(Settings.canDrawOverlays(this)?"已允许":"未允许")+"    无障碍："+(PhoneAccessibility.ready()?"已开启":"未开启"));}
     private void startFloat() {
+        if(updates!=null)updates.cancel();
         if(!hasAcknowledgedNotice())return;
         if(!Settings.canDrawOverlays(this)){Toast.makeText(this,"请先允许悬浮窗权限",1).show();return;}
         if(!PhoneAccessibility.ready()){Toast.makeText(this,"请先开启手机书签助手的无障碍服务",1).show();return;}
@@ -145,4 +151,6 @@ public class MainActivity extends Activity {
             catch(RuntimeException e){Toast.makeText(this,"启动失败："+e.getMessage(),1).show();}
         }
     }
+    @Override protected void onPause(){if(updates!=null)updates.cancel();super.onPause();}
+    @Override protected void onDestroy(){if(updates!=null)updates.destroy();super.onDestroy();}
 }

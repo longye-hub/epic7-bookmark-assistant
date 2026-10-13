@@ -48,8 +48,7 @@ public final class PhoneCapture implements AutoCloseable {
     }
    },handler);
    DisplayMetrics m=metrics();width=m.widthPixels;height=m.heightPixels;
-   reader=createReader(width,height);
-   display=projection.createVirtualDisplay("手机书签助手",width,height,m.densityDpi,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,reader.getSurface(),null,handler);
+   // Keep only consent here. No screen surface is attached until a verified game capture request.
   }catch(Exception e){close();throw e;}
  }
  private DisplayMetrics metrics(){DisplayMetrics m=new DisplayMetrics();((WindowManager)context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(m);return m;}
@@ -65,7 +64,7 @@ public final class PhoneCapture implements AutoCloseable {
      int[] pixels=new int[w1*h1];
      for(int y=0;y<h1;y++)for(int x=0;x<w1;x++){int i=y*stride+x*pixelStride;pixels[y*w1+x]=0xff000000|((buf.get(i)&255)<<16)|((buf.get(i+1)&255)<<8)|(buf.get(i+2)&255);}
      q.frame=new ShopVision.Frame(w1,h1,pixels);
-    }catch(Exception e){q.error=e;}finally{q.done.countDown();}
+    }catch(Exception e){q.error=e;}finally{if(display!=null)display.setSurface(null);q.done.countDown();}
    }catch(IllegalStateException ignored){}
   },handler);return r;
  }
@@ -77,19 +76,23 @@ public final class PhoneCapture implements AutoCloseable {
   display.resize(m.widthPixels,m.heightPixels,m.densityDpi);display.setSurface(reader.getSurface());
   width=m.widthPixels;height=m.heightPixels;old.close();
  });}
- private void failRequest(String msg){if(request!=null){request.error=new IOException(msg);request.done.countDown();request=null;}}
+ private void failRequest(String msg){if(display!=null)display.setSurface(null);if(request!=null){request.error=new IOException(msg);request.done.countDown();request=null;}}
  public ShopVision.Frame capture()throws Exception{
   if(closed)throw new IOException("屏幕捕获已停止，请回助手重新授权");
   Request q=new Request();
   handler.post(()->{
    if(closed){q.error=new IOException("屏幕捕获已停止");q.done.countDown();return;}
    failRequest("重叠截图请求已取消");
-   try(Image stale=reader.acquireLatestImage()){}catch(IllegalStateException ignored){}
+   if(reader!=null)try(Image stale=reader.acquireLatestImage()){}catch(IllegalStateException ignored){}
    request=q;
+   try{
+    if(display==null){DisplayMetrics m=metrics();width=m.widthPixels;height=m.heightPixels;reader=createReader(width,height);display=projection.createVirtualDisplay("手机书签助手",width,height,m.densityDpi,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,reader.getSurface(),null,handler);}
+    else display.setSurface(reader.getSurface());
+   }catch(Exception e){q.error=e;request=null;q.done.countDown();}
   });
   boolean completed=false;
   try{completed=q.done.await(3000,TimeUnit.MILLISECONDS);if(!completed)throw new IOException("未收到新截图，请检查屏幕共享与游戏状态");if(q.error!=null)throw q.error;return q.frame;}
-  finally{if(!completed)handler.post(()->{if(request==q)request=null;else q.frame=null;});}
+  finally{if(!completed)handler.post(()->{if(request==q){failRequest("截图请求已取消");}else q.frame=null;});}
  }
  @Override public void close(){
   if(closed)return;closed=true;

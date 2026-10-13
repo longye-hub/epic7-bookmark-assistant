@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class FloatService extends Service {
+    private static volatile FloatService instance;
+    public static void pauseForSettings(){FloatService s=instance;if(s!=null)s.requestStop();}
 
     private WindowManager wm;
     private LinearLayout panel;
@@ -60,6 +62,7 @@ public class FloatService extends Service {
     public void onCreate() {
         super.onCreate();
         try {
+        TransientFiles.clearKnown(getCacheDir());instance=this;
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         android.util.DisplayMetrics metrics=getResources().getDisplayMetrics();
         sizing=new UiSizing(metrics.density,metrics.widthPixels,metrics.heightPixels);
@@ -75,7 +78,7 @@ public class FloatService extends Service {
         if(!history.getString("pending","").isEmpty()){statusText="有未确认交易，请点核验后再开始";statusColor=0xFFFFDD88;}
         buildBall();     // 初始只显示小球，不挡画面
         loadTemplates();
-        log(vision != null ? "v1.5 就绪：奥芙原骨骼完整动画已内置，点人物展开" : "模板加载失败，禁止运行");
+        log(vision != null ? "v1.5.2 就绪：奥芙原骨骼完整动画已内置，点人物展开" : "模板加载失败，禁止运行");
         log(AppIdentity.AUTHOR_LINE);
         setStatus(vision==null?"模板加载失败，禁止开始":statusText,vision==null?0xFFFF9999:statusColor,vision==null||!history.getString("pending","").isEmpty()?"停":"签");
         } catch(IOException|RuntimeException e){log("悬浮窗初始化失败："+e.getMessage());android.widget.Toast.makeText(this,"悬浮窗无法开启，请查看日志与权限设置",android.widget.Toast.LENGTH_LONG).show();stopSelf();}
@@ -269,7 +272,6 @@ public class FloatService extends Service {
             if (logBuf.length() > 8000) logBuf.delete(0, 4000);
             text = logBuf.toString();
         }
-        android.util.Log.i("E7Farm", s);
         if (logView != null && expanded) {
             ui.post(() -> logView.setText(text));
         }
@@ -399,6 +401,7 @@ public class FloatService extends Service {
         } finally {
             p.destroy();
             if (activeProcess == p) activeProcess = null;
+            TransientFiles.remove(output);
         }
     }
     private void requireGameForeground() throws Exception {
@@ -476,6 +479,7 @@ public class FloatService extends Service {
 
     private ShopVision.Frame screencap() throws Exception {
         File file = new File(getCacheDir(), "e7_f.png");
+        try {
         if (file.exists() && !file.delete()) throw new IOException("无法删除旧截图");
         runSu("screencap", "-p", file.getAbsolutePath());
         runSu("chmod", "644", file.getAbsolutePath());
@@ -491,6 +495,7 @@ public class FloatService extends Service {
             if (!result.supported()) throw new IOException("当前仅校准1280x720横屏，截图为" + result.width + "x" + result.height);
             return result;
         } finally { bitmap.recycle(); }
+        } finally { TransientFiles.remove(file); }
     }
 
     private void farm(int wantCov, int wantMys, int maxRefresh) {
@@ -539,7 +544,9 @@ public class FloatService extends Service {
 
     @Override public void onDestroy() {
         destroyed=true;
+        if(instance==this)instance=null;
         requestStop();
+        try{TransientFiles.clearKnown(getCacheDir());}catch(IOException e){android.widget.Toast.makeText(this,"临时缓存清理失败，请在系统设置清理本应用缓存",1).show();}
         if(recoveryDialog!=null){try{recoveryDialog.dismiss();}catch(Exception e){}recoveryDialog=null;}
         if (panel != null && expanded) try { wm.removeView(panel); } catch (Exception e) { }
         if (ball != null) try { wm.removeView(ball); } catch (Exception e) { }

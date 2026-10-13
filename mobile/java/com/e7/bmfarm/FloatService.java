@@ -37,12 +37,33 @@ public class FloatService extends Service {
     private volatile int statusColor=0xFFCCFFCC;
     private android.content.SharedPreferences history;
     private PendingPersistence persistence;
-    private PhoneCapture phoneCapture;
+    private volatile PhoneCapture phoneCapture;
     private MobileViewport viewport;
     private android.graphics.Rect gameBounds;
     private long frameAt;
     private static volatile FloatService instance;
     public static boolean active(){return instance!=null && instance.phoneCapture!=null;}
+    public static void pauseForSettings(){FloatService s=instance;if(s!=null){s.requestStop();s.endCapture();}}
+    private java.util.concurrent.ScheduledExecutorService captureWatch;
+    private synchronized void endCapture(){
+        if(captureWatch!=null){captureWatch.shutdownNow();captureWatch=null;}
+        if(phoneCapture!=null){phoneCapture.close();phoneCapture=null;}
+        viewport=null;gameBounds=null;stopForeground(true);
+    }
+    private void watchCapture(){
+        final CapturePrivacyPolicy policy=new CapturePrivacyPolicy(android.os.SystemClock.elapsedRealtime());
+        final PhoneCapture session=phoneCapture;
+        captureWatch=java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
+        captureWatch.scheduleWithFixedDelay(()->{
+            if(destroyed||phoneCapture!=session)return;
+            boolean locked=((android.app.KeyguardManager)getSystemService(KEYGUARD_SERVICE)).isKeyguardLocked()||!PhoneAccessibility.ready();
+            boolean[] state;
+            try{state=PhoneAccessibility.captureForeground(getPackageName());}catch(Exception e){state=new boolean[]{false,false};}
+            if(policy.shouldEnd(state[0],state[1],locked,android.os.SystemClock.elapsedRealtime()))ui.post(()->{
+                if(phoneCapture!=session)return;requestStop();endCapture();log("已离开游戏、锁屏或授权闲置，共享已结束；回助手重新授权");
+            });
+        },0,400,java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
     private void foregroundNotification(){
         android.app.NotificationManager manager=(android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         manager.createNotificationChannel(new android.app.NotificationChannel("capture","屏幕识别服务",android.app.NotificationManager.IMPORTANCE_LOW));
@@ -57,14 +78,17 @@ public class FloatService extends Service {
         try{
             Intent consent=intent.getParcelableExtra("consent");
             if(consent==null)throw new IOException("缺少屏幕共享授权");
+            foregroundNotification();
             phoneCapture=new PhoneCapture(this,intent.getIntExtra("result",0),consent,message->ui.post(()->{requestStop();log(message);android.widget.Toast.makeText(this,message,1).show();stopSelf();}));
             instance=this;log("免 Root 捕获已就绪，请进入秘密商店顶部，点检查画面或开始");
+            watchCapture();
         }catch(Exception e){log("屏幕捕获失败："+e.getMessage());android.widget.Toast.makeText(this,e.getMessage(),1).show();stopSelf();}
         return START_NOT_STICKY;
     }
     @Override public void onConfigurationChanged(android.content.res.Configuration config){
         super.onConfigurationChanged(config);
         if(running)requestStop();viewport=null;
+        endCapture();
         if(phoneCapture!=null)phoneCapture.resizeToScreen();
         android.util.DisplayMetrics m=getResources().getDisplayMetrics();sizing=new UiSizing(m.density,m.widthPixels,m.heightPixels);
         if(expanded){wm.removeView(panel);expanded=false;}panel=null;lpPanel=null;
@@ -105,7 +129,7 @@ public class FloatService extends Service {
         if(!history.getString("pending","").isEmpty()){statusText="有未确认交易，请点核验后再开始";statusColor=0xFFFFDD88;}
         buildBall();     // 初始只显示小球，不挡画面
         loadTemplates();
-        log(vision != null ? "手机版 v1.0 就绪：奥芙原骨骼完整动画已内置，点人物展开" : "模板加载失败，禁止运行");
+        log(vision != null ? "手机版 v1.0.2 就绪：奥芙原骨骼完整动画已内置，点人物展开" : "模板加载失败，禁止运行");
         log(AppIdentity.AUTHOR_LINE);
         setStatus(vision==null?"模板加载失败，禁止开始":statusText,vision==null?0xFFFF9999:statusColor,vision==null||!history.getString("pending","").isEmpty()?"停":"签");
         } catch(IOException|RuntimeException e){log("悬浮窗初始化失败："+e.getMessage());android.widget.Toast.makeText(this,"悬浮窗无法开启，请查看日志与权限设置",android.widget.Toast.LENGTH_LONG).show();stopSelf();}
@@ -300,7 +324,6 @@ public class FloatService extends Service {
             if (logBuf.length() > 8000) logBuf.delete(0, 4000);
             text = logBuf.toString();
         }
-        android.util.Log.i("E7Farm", s);
         if (logView != null && expanded) {
             ui.post(() -> logView.setText(text));
         }
@@ -348,6 +371,7 @@ public class FloatService extends Service {
     }
 
     private void startFarm() {
+        if(phoneCapture==null){log("屏幕共享已结束，请回助手重新授权");ui.post(()->{try{startActivity(new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}catch(RuntimeException ignored){}});return;}
         panelFocusable(false);
         if(!history.getString("pending","").isEmpty()){log("存在未确认交易，禁止重复开始；请先点击核验");setStatus("存在未确认交易，请先核验",0xFFFFDD88,"停");return;}
         if (vision == null) { log("缺少有效模板，禁止运行"); return; }
@@ -380,6 +404,7 @@ public class FloatService extends Service {
         running = false;keepAwake(false);
         Thread w = worker;
         if (w != null) w.interrupt();
+        endCapture();
         
         setStatus("已请求停止；已确认的游戏交易仍需核验",0xFFFFDD88,"停");
     }
@@ -502,7 +527,7 @@ public class FloatService extends Service {
             ShopVision.Frame f=screencap();
             String text="画面检查通过：金币与天空石可识别；誓约"+(vision.findCard(f,ShopVision.Product.COVENANT)!=null?"有":"当前画面无")+"，神秘"+(vision.findCard(f,ShopVision.Product.MYSTIC)!=null?"有":"当前画面无");
             log(text);setStatus("画面检查通过，未刷新或购买",0xFFCCFFCC,"签");
-        }catch(Exception e){log("画面检查："+e.getMessage());setStatus("画面检查未通过，请查看日志",0xFFFFDD88,"停");}finally{running=false;}},"PhoneScreenCheck");worker.start();
+        }catch(Exception e){log("画面检查："+e.getMessage());setStatus("画面检查未通过，请查看日志",0xFFFFDD88,"停");}finally{running=false;endCapture();log("检查已结束并释放共享；开始任务前需回助手重新授权");}},"PhoneScreenCheck");worker.start();
     }
 
     private void farm(int wantCov, int wantMys, int maxRefresh) {
@@ -545,12 +570,14 @@ public class FloatService extends Service {
             setStatus(finalStatus,(r.pendingPurchase!=null||r.pendingRefresh)?0xFFFFDD88:r.completed?0xFFCCFFCC:r.stopReason.equals("用户停止")?0xFFFFDD88:0xFFFF9999,r.completed?"完":"停");
             if(!r.completed)ui.post(()->android.widget.Toast.makeText(this,finalStatus,android.widget.Toast.LENGTH_LONG).show());
             if (worker == Thread.currentThread()) {running = false;keepAwake(false);}
+            endCapture();log("本次共享已结束；再次运行请回助手重新授权");
         }
     }
 
     @Override public void onDestroy() {
         destroyed=true;
         if(instance==this)instance=null;
+        endCapture();
         if(phoneCapture!=null){phoneCapture.close();phoneCapture=null;}
         stopForeground(true);
         requestStop();

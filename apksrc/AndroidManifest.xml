@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.e7.bmfarm"
-    android:versionCode="13"
-    android:versionName="1.5.1">
+    android:versionCode="14"
+    android:versionName="1.5.2">
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="28" />
 
@@ -12,6 +13,8 @@
         android:label="刷书签助手"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:allowBackup="false">
         <meta-data android:name="com.e7.bmfarm.author" android:value="longye" />
         <meta-data android:name="com.e7.bmfarm.contact_qq" android:value="1513972923" />
@@ -29,6 +32,7 @@
         <service
             android:name=".FloatService"
             android:exported="false" />
+        <service android:name="com.e7.bmfarm.UpdateService" android:exported="false" android:process=":updates" />
     </application>
 </manifest>
 
