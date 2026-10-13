@@ -1,0 +1,4 @@
+<resources>
+ <string name="app_name">手机书签助手</string>
+ <string name="accessibility_description">仅在你点击开始后，根据本地识别结果在国服第七史诗秘密商店点击和滑动，自动购买誓约书签、神秘奖牌并按上限刷新。需要读取前台窗口身份和位置。屏幕共享另行征求系统授权，画面仅在本机处理，不上传。切出游戏、关闭权限或点悬浮人物可停止。</string>
+</resources>

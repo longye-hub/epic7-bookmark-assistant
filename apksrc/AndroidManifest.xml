@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.e7.bmfarm"
+    android:versionCode="13"
+    android:versionName="1.5.1">
+
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="28" />
+
+    <application
+        android:label="刷书签助手"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:allowBackup="false">
+        <meta-data android:name="com.e7.bmfarm.author" android:value="longye" />
+        <meta-data android:name="com.e7.bmfarm.contact_qq" android:value="1513972923" />
+
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="landscape"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".FloatService"
+            android:exported="false" />
+    </application>
+</manifest>
+
+
+
+

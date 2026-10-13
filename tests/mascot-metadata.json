@@ -1,0 +1,44 @@
+{
+  "source": "local original model/epicsubdash",
+  "canvas": [
+    260,
+    304
+  ],
+  "fps": 60,
+  "bounds": {
+    "minX": -114.71083621460485,
+    "minY": -48.109479453703656,
+    "maxX": 114.3471452911885,
+    "maxY": 231.046299729358
+  },
+  "viewport": {
+    "x": -130.18184546170818,
+    "y": -56.109479453703656
+  },
+  "durations": {
+    "charge": 0.4000000059604645,
+    "down": 0.3666999936103821,
+    "fail": 0.6000000238418579,
+    "fast_move": 0.33329999446868896,
+    "idle": 1.399999976158142,
+    "move": 0.666700005531311
+  },
+  "states": {
+    "idle": {
+      "frames": 84,
+      "durationMs": 1400
+    },
+    "move": {
+      "frames": 40,
+      "durationMs": 667
+    },
+    "fail": {
+      "frames": 36,
+      "durationMs": 600
+    },
+    "down": {
+      "frames": 22,
+      "durationMs": 367
+    }
+  }
+}
