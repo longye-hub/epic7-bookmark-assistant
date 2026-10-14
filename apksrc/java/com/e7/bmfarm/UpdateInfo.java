@@ -8,8 +8,7 @@ public final class UpdateInfo {
  public final int versionCode;public final String versionName,channel,releaseUrl,downloadUrl,sha256,notes;
  private UpdateInfo(int code,Map<String,String> p){versionCode=code;versionName=p.get("versionName");channel=p.get("channel");releaseUrl=p.get("releaseUrl");downloadUrl=p.get("downloadUrl");sha256=p.get("sha256");notes=p.get("notes");}
  public static String endpoint(String pkg)throws IOException{
-  String variant=variant(pkg);
-  return "https://raw.githubusercontent.com/longye-hub/epic7-bookmark-assistant/main/updates/"+variant+".properties";
+  return NoticeEndpoints.update(pkg);
  }
  private static String variant(String pkg)throws IOException{if("com.e7.bmfarm".equals(pkg))return "root";if("com.e7.bmfarm.mobile".equals(pkg))return "mobile";throw new IOException("不支持的应用类型");}
  public static UpdateInfo parse(String text,String pkg)throws IOException{

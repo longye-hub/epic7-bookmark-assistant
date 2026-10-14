@@ -78,7 +78,7 @@ public class FloatService extends Service {
         if(!history.getString("pending","").isEmpty()){statusText="有未确认交易，请点核验后再开始";statusColor=0xFFFFDD88;}
         buildBall();     // 初始只显示小球，不挡画面
         loadTemplates();
-        log(vision != null ? "v1.5.2 就绪：奥芙原骨骼完整动画已内置，点人物展开" : "模板加载失败，禁止运行");
+        log(vision != null ? "v1.5.3 就绪：奥芙原骨骼完整动画已内置，点人物展开" : "模板加载失败，禁止运行");
         log(AppIdentity.AUTHOR_LINE);
         setStatus(vision==null?"模板加载失败，禁止开始":statusText,vision==null?0xFFFF9999:statusColor,vision==null||!history.getString("pending","").isEmpty()?"停":"签");
         } catch(IOException|RuntimeException e){log("悬浮窗初始化失败："+e.getMessage());android.widget.Toast.makeText(this,"悬浮窗无法开启，请查看日志与权限设置",android.widget.Toast.LENGTH_LONG).show();stopSelf();}

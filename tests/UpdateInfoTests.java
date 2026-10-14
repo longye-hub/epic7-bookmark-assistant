@@ -11,8 +11,8 @@ public final class UpdateInfoTests {
   UpdateInfo i=UpdateInfo.parse(fixture,"com.e7.bmfarm.mobile");
   need(i.newerThan(3)&&!i.newerThan(4)&&!i.newerThan(5),"use integer versionCode, never version strings");
   need(i.notes.equals("隐私加固与更新提醒"),"preserve Unicode public notes");
-  need(UpdateInfo.endpoint("com.e7.bmfarm.mobile").endsWith("/updates/mobile.properties"),"fixed mobile endpoint");
-  need(UpdateInfo.endpoint("com.e7.bmfarm").endsWith("/updates/root.properties"),"fixed root endpoint");
+  need(UpdateInfo.endpoint("com.e7.bmfarm.mobile").endsWith("/mobile.properties"),"fixed mobile endpoint");
+  need(UpdateInfo.endpoint("com.e7.bmfarm").endsWith("/root.properties"),"fixed root endpoint");
   reject(fixture.replace("packageName=com.e7.bmfarm.mobile","packageName=com.e7.bmfarm"));
   reject(fixture.replace("schema=1","schema=2"));
   reject(fixture+"versionCode=99\n");
