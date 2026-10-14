@@ -8,7 +8,7 @@ public final class LiveNoticeCheck {
   for(String variant:new String[]{"root","mobile"}){
    String pkg="com.e7.bmfarm"+(variant.equals("mobile")?".mobile":"");
    String text=UpdateTransport.fetch(pkg);UpdateInfo info=UpdateInfo.parse(text,pkg);
-   if(out!=null)Files.write(out.resolve(variant+".properties"),text.getBytes(StandardCharsets.UTF_8));
+   if(out!=null)Files.write(out.resolve(variant+"-v2.properties"),text.getBytes(StandardCharsets.UTF_8));
    System.out.println("LIVE_VERSION_PASS "+variant+" "+info.versionName+" code="+info.versionCode+" source="+UpdateInfo.endpoint(pkg));
   }
   String text=UpdateTransport.fetchAnnouncement();AnnouncementInfo info=AnnouncementInfo.parse(text);

@@ -4,7 +4,7 @@
 
 ## 托管选择与费用边界
 
-采用腾讯 CNB 公开仓库存放三个小型文本文件：`root.properties`、`mobile.properties`、`announcements.properties`。源码主仓库仍在 GitHub。只使用免费额度，不绑定付费预算、不启动云端构建或 AI 服务。
+采用腾讯 CNB 公开仓库存放公开通知文件及 Release 安装包。新版读取 `root-v2.properties`、`mobile-v2.properties`；保留 `root.properties`、`mobile.properties` 兼容旧版；普通公告共用 `announcements.properties`。源码主仓库仍在 GitHub。只使用免费额度，不绑定付费预算、不启动云端构建或 AI 服务。
 
 CNB 官方定价目前提供 100 GiB 仓库存储免费额度。平台政策可能变化，需定期复核；没有承诺永久免限额或全国所有运营商随时可达。发布者首次创建组织可能需实名认证；普通助手用户只匿名读取公开文件，无需平台账号。
 
@@ -34,7 +34,7 @@ body=这里填写公开公告正文；无需发布新版 APK。
 
 两版元数据格式及签名、哈希流程见 [UPDATING.md](UPDATING.md)。通知仓库和 GitHub 兼容清单都应更新，帮助旧版用户发现切换到国内源的新 APK。先公开安装包，核对正式下载链接与 SHA256，再发布清单。
 
-国内通知源不等于国内安装包下载：当前安装包仍从作者 GitHub Release 下载，源码按钮也仍打开 GitHub。两者仅在用户主动点击时访问；启动检查不回退请求 GitHub。
+安装包也放在作者 CNB Release 的正式附件区，国内下载不需要 GitHub；GitHub保留相同文件作为备用。不要把描述中上传的附件、临时签名地址或限时分享链接写入版本清单。下载链接使用固定 `/releases/download/标签/文件名` 路径，用户浏览器随后跟随平台的下载跳转；公告与版本文本读取仍拒绝跳转。源码按钮打开GitHub，仅在用户主动点击时访问；启动检查不回退请求GitHub。
 
 ## 隐私与失败处理
 

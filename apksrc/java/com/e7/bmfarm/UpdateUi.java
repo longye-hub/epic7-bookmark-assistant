@@ -33,9 +33,14 @@ public final class UpdateUi {
   return true;
  }
  private void showUpdate(UpdateInfo info){
-  dialog=new AlertDialog.Builder(activity).setTitle("发现助手更新")
-   .setMessage("当前："+name+"\n新版："+info.versionName+("preview".equals(info.channel)?"（测试版）":"")+"\n\n"+info.notes+"\n\n更新前请停止任务并核对待确认交易。下载后由系统确认覆盖安装，不要先卸载。")
-   .setPositiveButton("前往下载",(d,w)->open(info.downloadUrl)).setNeutralButton("版本说明",(d,w)->open(info.releaseUrl)).setNegativeButton("稍后",null).create();
+  LinearLayout content=new LinearLayout(activity);content.setOrientation(LinearLayout.VERTICAL);
+  int pad=Math.round(20*activity.getResources().getDisplayMetrics().density);content.setPadding(pad,pad/2,pad,pad/2);
+  TextView body=new TextView(activity);body.setText("当前："+name+"\n新版："+info.versionName+("preview".equals(info.channel)?"（测试版）":"")+"\n\n"+info.notes+"\n\n更新前请停止任务并核对待确认交易。下载交给浏览器，由系统确认覆盖安装，不要先卸载。两处提供相同安装包。");body.setTextSize(15);content.addView(body);
+  Button primary=new Button(activity);primary.setText(info.fallbackUrl==null?"前往下载":"国内下载（CNB）");primary.setOnClickListener(v->{dismissDialog();open(info.downloadUrl);});content.addView(primary);
+  if(info.fallbackUrl!=null){Button fallback=new Button(activity);fallback.setText("GitHub 备用下载");fallback.setOnClickListener(v->{dismissDialog();open(info.fallbackUrl);});content.addView(fallback);}
+  Button notes=new Button(activity);notes.setText("版本说明");notes.setOnClickListener(v->{dismissDialog();open(info.releaseUrl);});content.addView(notes);
+  ScrollView scroll=new ScrollView(activity);scroll.addView(content);
+  dialog=new AlertDialog.Builder(activity).setTitle("发现助手更新").setView(scroll).setNegativeButton("稍后",null).create();
   dialog.setOnDismissListener(d->dialog=null);dialog.show();
  }
  private void showAnnouncement(AnnouncementInfo info,Runnable next){
@@ -77,6 +82,7 @@ public final class UpdateUi {
   status=new TextView(a);status.setText("可手动检查更新和公告。");status.setTextSize(13);parent.addView(status);
   readNotice=new Button(a);readNotice.setText("查看最近公告（本机缓存）");readNotice.setEnabled(cached!=null&&cached.active);
   readNotice.setOnClickListener(v->{if(cached!=null&&cached.active){canShow=false;dismissDialog();canShow=true;showAnnouncement(cached,()->{});}else check(true);});parent.addView(readNotice);
+  Button domestic=new Button(a);domestic.setText("国内安装包与版本说明（CNB）");domestic.setOnClickListener(v->open(UpdateInfo.DOMESTIC_REPOSITORY+"/-/releases"));parent.addView(domestic);
   TextView repo=new TextView(a);repo.setText("源码仓库：\n"+UpdateInfo.REPOSITORY);repo.setTextSize(12);parent.addView(repo);
   Button source=new Button(a);source.setText("查看源码仓库");source.setOnClickListener(v->open(UpdateInfo.REPOSITORY));parent.addView(source);
  }

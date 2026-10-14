@@ -1,46 +1,38 @@
 # 发布更新与联网边界
 
-## 老用户怎样获得更新
+Root v1.5.4（versionCode 16）、手机 v1.0.4（versionCode 5）提供 CNB 国内下载，GitHub 保留备用。两处必须放置完全相同的原签名 APK。覆盖安装前停止任务、核对待确认交易，不要先卸载。没有更新功能的旧版需要先手动下载；带检查功能的旧版仍通过兼容清单获得升级提醒。
 
-老的 Root v1.5.1 / Mobile v1.0.1 没有联网更新功能，需要先从 Releases 手动下载本次新版并覆盖安装。不要先卸载，卸载会丢失设置和待核验记录。
+## 发布顺序
 
-本次版本提供启动页自动提醒（每24小时最多一次，可关闭）、手动检查及普通公告。只在启动页查询；没有常驻后台推送或强制升级。发现新版显示公开说明和测试渠道，用户自行选择是否下载，安装仍由安卓系统确认。普通公告见 [ANNOUNCEMENTS.md](ANNOUNCEMENTS.md)。
+1. 保持各版包名及发布者签名，分别递增 `versionCode`，构建和验证。文件名必须为 `epic7-root-v版本.apk` 或 `epic7-mobile-v版本.apk`。
+2. 将 APK、`SHA256SUMS.txt` 和使用说明上传到 GitHub Release，并放入 [CNB 通知仓库](https://cnb.cool/longye-hub/epic7-notices) 同标签 Release 的正式附件区。源码仍发布在 GitHub；CNB 的自动 Source code 附件只是通知仓库的文本源文件。
+3. 匿名下载两渠道正式 APK，核对字节数和 SHA256。**先验证安装包可公开下载，再发布版本清单**。
+4. 更新 CNB 与本仓库 `updates/` 下的 `root-v2.properties`、`mobile-v2.properties`；同时更新 `root.properties`、`mobile.properties` 的 schema=1 GitHub 链接，兼容 Root v1.5.2/v1.5.3、手机 v1.0.2/v1.0.3。不要把旧路径直接改为 schema=2，否则旧解析器会拒绝清单。
+5. 运行公开测试、生产网络读取检查，确认包类型、标签、版本、哈希一致。普通公告另外按递增编号发布，见 [ANNOUNCEMENTS.md](ANNOUNCEMENTS.md)。
 
-## 以后怎样发新版
-
-1. 保持各版包名和发布者现有签名，分别递增 `versionCode`；不能只改展示的 `versionName`。目前 Root 为15/1.5.3，手机版为4/1.0.3。
-2. 完成相应测试，上传对应 APK 到新 Release。文件名须为 `epic7-root-v版本.apk` 或 `epic7-mobile-v版本.apk`，与清单一致。
-3. 核验上传文件SHA256后，再更新 [CNB通知仓库](https://cnb.cool/longye-hub/epic7-notices) 中对应清单，同时同步本仓库 `updates/root.properties` / `updates/mobile.properties` 到main，兼容仍使用GitHub的旧客户端。**先让安装包可公开下载，再更新清单**，避免提醒指向不存在的文件。
-4. 运行公开测试并核对清单的包名、版本号、渠道、说明、文件地址和哈希。手机与Root单独管理；只有其中一版更新时只修改对应清单。
-
-格式是严格UTF-8 `key=value` 文本，不是Java Properties转义格式。字段必须完整且唯一，禁止增加设备信息、任意链接、脚本或上传参数；修改协议需要增加schema并先更新客户端。
+格式为严格 UTF-8 无 BOM 的 `key=value` 文本，每个值一行，不是 Java Properties 转义格式。字段须完整唯一，不接受额外设备字段、操作指令或任意链接。
 
 ```text
-schema=1
+schema=2
 packageName=com.e7.bmfarm.mobile
-versionCode=4
-versionName=1.0.3
+versionCode=5
+versionName=1.0.4
 channel=preview
-releaseUrl=https://github.com/longye-hub/epic7-bookmark-assistant/releases/tag/2026.10.14
-downloadUrl=https://github.com/longye-hub/epic7-bookmark-assistant/releases/download/2026.10.14/epic7-mobile-v1.0.3.apk
+releaseUrl=https://cnb.cool/longye-hub/epic7-notices/-/releases/tag/2026.10.14.2
+downloadUrl=https://cnb.cool/longye-hub/epic7-notices/-/releases/download/2026.10.14.2/epic7-mobile-v1.0.4.apk
+fallbackUrl=https://github.com/longye-hub/epic7-bookmark-assistant/releases/download/2026.10.14.2/epic7-mobile-v1.0.4.apk
 sha256=这里填写上传APK的64位十六进制SHA256
-notes=这里写一行公开更新说明，可使用中文
+notes=这里写一行公开更新说明
 ```
 
-`channel` 为 `preview` 或 `stable`，客户端显示其属性；当前没有用户可选的双渠道开关。当前测试包对应清单为preview，不能通过普通latest-release接口遗漏测试版。
+schema=1 不含 `fallbackUrl`，`releaseUrl` 和 `downloadUrl` 都必须指向作者 GitHub 源码仓库。schema=2 必须使用作者 CNB 通知仓库的正式发布路径和作者 GitHub 对应备用链接；标签、版本与包类型必须一致。拒绝 HTTP、其他作者/仓库、查询参数、限时分享链接或任意临时对象地址。`channel` 仅为 `preview` 或 `stable`，当前两版继续以测试渠道发布。
 
 ## 请求与隔离
 
-只读更新服务是私有 `:updates` 进程，`exported=false`。主程序只通过Messenger发送CHECK信号及本机请求序号，更新服务回传公开文本，不接收画面、私有交易记录、设备标识或任意URL。APK不会在助手内下载：链接交给浏览器。
+私有 `:updates` 普通进程服务 `exported=false`。主程序通过 Messenger 只发送 CHECK 信号及本机请求序号，不发送当前版本、截图、余额、设备标识、交易记录、已读状态或可配置 URL。服务只回传公开文本。
 
-两版固定请求作者CNB仓库main下的公开文件，不自动回退到GitHub：
+新版仅请求 CNB 固定目录 `https://cnb.cool/longye-hub/epic7-notices/-/git/raw/main/` 下的两类版本清单之一和 `announcements.properties`。GET 无正文、Cookie、Authorization 或用户字段；固定 User-Agent `Epic7-UpdateCheck/1`。拒绝元数据重定向、单文件超过 16KiB 和无效 UTF-8，采用系统 TLS 校验，不修改信任锚。退出启动页取消请求；不自动请求 GitHub 备用地址。
 
-- `https://cnb.cool/longye-hub/epic7-notices/-/git/raw/main/root.properties`
-- `https://cnb.cool/longye-hub/epic7-notices/-/git/raw/main/mobile.properties`
-- `https://cnb.cool/longye-hub/epic7-notices/-/git/raw/main/announcements.properties`
+APK 下载交给浏览器，浏览器会跟随 CNB 正式下载链接到平台对象存储的正常跳转。助手不自行下载、不读取浏览器下载文件、不静默安装。`sha256` 用于发布资产核验，不能宣称助手已自动验证用户手机上的下载文件。
 
-请求方法只有GET；无正文、Cookie、Authorization、设备ID、账户信息、当前版本或公告已读状态；User-Agent固定为 `Epic7-UpdateCheck/1`。拒绝重定向，单文件最多读取16KiB，使用系统TLS信任锚，不允许明文HTTP或自定义信任所有证书。
-
-**普通独立进程共享应用UID和权限。** 此方案是经用户选择的代码隔离，不能阻止被攻陷的同UID代码访问私有数据，也没有把安卓INTERNET权限变成“只接收更新”的细分权限。网络连接仍使托管平台或网络链路获得IP等基础连接信息。README和界面不得宣称系统级隔离、绝对不可能泄露或匿名到无法识别网络来源。
-
-`sha256`用于公开资产核验与发布验证；助手不下载APK，不能声称它在设备上已经自动核对了下载文件。系统签名兼容检查与用户核验发布哈希是不同环节。保持签名密钥安全，本仓库不包含作者签名材料；他人自行构建的不同签名包不能保证覆盖原版。
+**同 UID 的普通进程共享整个应用权限。** 这是用户选择的代码隔离，不能宣称系统级权限隔离或绝对不泄露。平台与网络仍可获得 IP 等正常连接信息。没有平台/统计/推送 SDK、用户注册或后台推送；提醒发生在打开助手时，每24小时最多自动检查一次，可关闭或手动检查。

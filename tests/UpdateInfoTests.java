@@ -11,8 +11,20 @@ public final class UpdateInfoTests {
   UpdateInfo i=UpdateInfo.parse(fixture,"com.e7.bmfarm.mobile");
   need(i.newerThan(3)&&!i.newerThan(4)&&!i.newerThan(5),"use integer versionCode, never version strings");
   need(i.notes.equals("隐私加固与更新提醒"),"preserve Unicode public notes");
-  need(UpdateInfo.endpoint("com.e7.bmfarm.mobile").endsWith("/mobile.properties"),"fixed mobile endpoint");
-  need(UpdateInfo.endpoint("com.e7.bmfarm").endsWith("/root.properties"),"fixed root endpoint");
+  need(UpdateInfo.endpoint("com.e7.bmfarm.mobile").endsWith("/mobile-v2.properties"),"separate mobile v2 endpoint preserves older clients");
+  need(UpdateInfo.endpoint("com.e7.bmfarm").endsWith("/root-v2.properties"),"separate root v2 endpoint preserves older clients");
+  String domestic=fixture.replace("schema=1","schema=2").replace("releaseUrl=https://github.com/longye-hub/epic7-bookmark-assistant/releases/tag/","releaseUrl=https://cnb.cool/longye-hub/epic7-notices/-/releases/tag/").replace("downloadUrl=https://github.com/longye-hub/epic7-bookmark-assistant/releases/download/","downloadUrl=https://cnb.cool/longye-hub/epic7-notices/-/releases/download/")+"fallbackUrl=https://github.com/longye-hub/epic7-bookmark-assistant/releases/download/2026.10.13.2/epic7-mobile-v1.0.3.apk\n";
+  need(UpdateInfo.parse(domestic,"com.e7.bmfarm.mobile").downloadUrl.startsWith("https://cnb.cool/"),"accept owned CNB stable download URL");
+  reject(domestic.replace("cnb.cool/longye-hub/","cnb.cool/other-owner/"));
+  reject(domestic.replace("cnb.cool/longye-hub/","cnb.cool@evil.example/longye-hub/"));
+  reject(domestic.replace("epic7-notices/-/releases/","other-repo/-/releases/"));
+  reject(domestic.replace("epic7-mobile-v1.0.3.apk","epic7-root-v1.0.3.apk"));
+  reject(domestic.replace("fallbackUrl=https://github.com/","fallbackUrl=https://evil.example/"));
+  reject(domestic.replace("download/2026.10.13.2/","download/2026.10.14/"));
+  reject(domestic.replace(".apk\n",".apk?share=temporary\n"));
+  reject(domestic.replace("/-/releases/tag/","/-/files/"));
+  reject(domestic.replace("schema=2","schema=3"));
+  reject(domestic.replace("schema=2","schema=1"));
   reject(fixture.replace("packageName=com.e7.bmfarm.mobile","packageName=com.e7.bmfarm"));
   reject(fixture.replace("schema=1","schema=2"));
   reject(fixture+"versionCode=99\n");
@@ -31,9 +43,12 @@ public final class UpdateInfoTests {
   if(args.length>0){
    for(String variant:new String[]{"root","mobile"}){
     String pkg="com.e7.bmfarm"+(variant.equals("mobile")?".mobile":"");
-    String live=new String(Files.readAllBytes(Paths.get(args[0],variant+".properties")),StandardCharsets.UTF_8);
-    UpdateInfo released=UpdateInfo.parse(live,pkg);
-    need(released.versionCode>0,"published manifest must pass the production parser: "+variant);
+    for(String suffix:new String[]{".properties","-v2.properties"}){
+     Path path=Paths.get(args[0],variant+suffix);if(!Files.exists(path)&&suffix.startsWith("-"))continue;
+     String live=new String(Files.readAllBytes(path),StandardCharsets.UTF_8);
+     UpdateInfo released=UpdateInfo.parse(live,pkg);
+     need(released.versionCode>0,"published manifest must pass the production parser: "+variant+suffix);
+    }
    }
   }
   System.out.println("UPDATE_INFO_PASS "+checks+" checks; fixed endpoints, strict metadata, origin, variant and version validation");
