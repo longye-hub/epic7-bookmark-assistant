@@ -87,13 +87,16 @@ public class FloatService extends Service {
     }
     @Override public void onConfigurationChanged(android.content.res.Configuration config){
         super.onConfigurationChanged(config);
-        if(running)requestStop();viewport=null;
-        endCapture();
-        if(phoneCapture!=null)phoneCapture.resizeToScreen();
+        // Returning from portrait consent to a landscape game is normal. An unused
+        // token has no capture surface and may follow the new display geometry.
+        // Once any task/capture started, preserve the stop-and-release guard.
+        boolean mustStop=running||(phoneCapture!=null&&phoneCapture.hasStarted());
+        if(mustStop)requestStop();
+        viewport=null;gameBounds=null;
         android.util.DisplayMetrics m=getResources().getDisplayMetrics();sizing=new UiSizing(m.density,m.widthPixels,m.heightPixels);
         if(expanded){wm.removeView(panel);expanded=false;}panel=null;lpPanel=null;
         if(ball!=null){lpBall.width=sizing.px(72);lpBall.height=sizing.px(72*(float)MascotTimeline.HEIGHT/MascotTimeline.WIDTH);lpBall.gravity=Gravity.TOP|Gravity.START;lpBall.x=24;lpBall.y=90;wm.updateViewLayout(ball,lpBall);}
-        log("屏幕尺寸已变化，重新检查后再开始");
+        log(mustStop?"运行中屏幕尺寸变化，已停止并释放共享；请重新授权":phoneCapture!=null?"屏幕方向已适配，共享授权保留；可检查画面或开始":"屏幕尺寸已变化，请先授权屏幕共享");
     }
     private volatile boolean destroyed;
     private android.app.AlertDialog recoveryDialog;
@@ -129,11 +132,13 @@ public class FloatService extends Service {
         if(!history.getString("pending","").isEmpty()){statusText="有未确认交易，请点核验后再开始";statusColor=0xFFFFDD88;}
         buildBall();     // 初始只显示小球，不挡画面
         loadTemplates();
-        log(vision != null ? "手机版 v1.0.3 就绪：奥芙原骨骼完整动画已内置，点人物展开" : "模板加载失败，禁止运行");
+        log(vision != null ? "手机版 v"+installedVersion()+" 就绪：奥芙原骨骼完整动画已内置，点人物展开" : "模板加载失败，禁止运行");
         log(AppIdentity.AUTHOR_LINE);
         setStatus(vision==null?"模板加载失败，禁止开始":statusText,vision==null?0xFFFF9999:statusColor,vision==null||!history.getString("pending","").isEmpty()?"停":"签");
         } catch(IOException|RuntimeException e){log("悬浮窗初始化失败："+e.getMessage());android.widget.Toast.makeText(this,"悬浮窗无法开启，请查看日志与权限设置",android.widget.Toast.LENGTH_LONG).show();stopSelf();}
     }
+
+    private String installedVersion(){try{return getPackageManager().getPackageInfo(getPackageName(),0).versionName;}catch(android.content.pm.PackageManager.NameNotFoundException e){return "未知";}}
 
     /** 无背景人物：保留拖动与展开面板交互。 */
     private void buildBall() throws IOException {

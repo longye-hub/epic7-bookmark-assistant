@@ -45,6 +45,9 @@ foreach($taskVariant in $taskVariants){
  }else{$taskSources=@($taskShared.FullName)}
  Write-Output "Build $taskVariant v$taskVersion"
  Invoke-Tool $taskJavac (@('-encoding','UTF-8','--release','8','-classpath',$taskAndroid,'-d',$taskObj)+$taskSources)
+ if($taskVariant -eq 'mobile'){
+  & (Join-Path $PSScriptRoot 'test-rotation.ps1') -JavaHome $JavaHome -MobileClasses $taskObj -AndroidJar $taskAndroid
+ }
  $taskClasses=Get-ChildItem $taskObj -Filter '*.class' -Recurse | ForEach-Object FullName
  Invoke-Tool $taskJava (@('-cp',(Join-Path $BuildToolsPath 'lib/d8.jar'),'com.android.tools.r8.D8','--release','--min-api','26','--lib',$taskAndroid,'--output',$taskBuild)+$taskClasses)
  $taskBase=Join-Path $taskBuild 'base.apk'

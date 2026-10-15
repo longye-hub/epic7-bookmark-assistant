@@ -1,13 +1,13 @@
 # 发布更新与联网边界
 
-Root v1.5.4（versionCode 16）、手机 v1.0.4（versionCode 5）提供 CNB 国内下载，GitHub 保留备用。两处必须放置完全相同的原签名 APK。覆盖安装前停止任务、核对待确认交易，不要先卸载。没有更新功能的旧版需要先手动下载；带检查功能的旧版仍通过兼容清单获得升级提醒。
+Root v1.5.4（versionCode 16）、手机 v1.0.5（versionCode 6）提供 CNB 国内下载，GitHub 保留备用。两处必须放置完全相同的原签名 APK。覆盖安装前停止任务、核对待确认交易，不要先卸载。没有更新功能的旧版需要先手动下载；带检查功能的旧版仍通过兼容清单获得升级提醒。
 
 ## 发布顺序
 
-1. 保持各版包名及发布者签名，分别递增 `versionCode`，构建和验证。文件名必须为 `epic7-root-v版本.apk` 或 `epic7-mobile-v版本.apk`。
+1. 保持各版包名及发布者签名，对有改动的应用递增 `versionCode`（本次仅手机版；Root版未改动，保持16/1.5.4），构建和验证。文件名必须为 `epic7-root-v版本.apk` 或 `epic7-mobile-v版本.apk`。
 2. 将 APK、`SHA256SUMS.txt` 和使用说明上传到 GitHub Release，并放入 [CNB 通知仓库](https://cnb.cool/longye-hub/epic7-notices) 同标签 Release 的正式附件区。源码仍发布在 GitHub；CNB 的自动 Source code 附件只是通知仓库的文本源文件。
 3. 匿名下载两渠道正式 APK，核对字节数和 SHA256。**先验证安装包可公开下载，再发布版本清单**。
-4. 更新 CNB 与本仓库 `updates/` 下的 `root-v2.properties`、`mobile-v2.properties`；同时更新 `root.properties`、`mobile.properties` 的 schema=1 GitHub 链接，兼容 Root v1.5.2/v1.5.3、手机 v1.0.2/v1.0.3。不要把旧路径直接改为 schema=2，否则旧解析器会拒绝清单。
+4. 更新 CNB 与本仓库 `updates/` 下的 `root-v2.properties`、`mobile-v2.properties`；同时更新对应的 `root.properties`、`mobile.properties`（未升级的应用保留原清单） 的 schema=1 GitHub 链接，兼容 Root v1.5.2/v1.5.3、手机 v1.0.2/v1.0.3。不要把旧路径直接改为 schema=2，否则旧解析器会拒绝清单。
 5. 运行公开测试、生产网络读取检查，确认包类型、标签、版本、哈希一致。普通公告另外按递增编号发布，见 [ANNOUNCEMENTS.md](ANNOUNCEMENTS.md)。
 
 格式为严格 UTF-8 无 BOM 的 `key=value` 文本，每个值一行，不是 Java Properties 转义格式。字段须完整唯一，不接受额外设备字段、操作指令或任意链接。
@@ -15,12 +15,12 @@ Root v1.5.4（versionCode 16）、手机 v1.0.4（versionCode 5）提供 CNB 国
 ```text
 schema=2
 packageName=com.e7.bmfarm.mobile
-versionCode=5
-versionName=1.0.4
+versionCode=6
+versionName=1.0.5
 channel=preview
-releaseUrl=https://cnb.cool/longye-hub/epic7-notices/-/releases/tag/2026.10.14.2
-downloadUrl=https://cnb.cool/longye-hub/epic7-notices/-/releases/download/2026.10.14.2/epic7-mobile-v1.0.4.apk
-fallbackUrl=https://github.com/longye-hub/epic7-bookmark-assistant/releases/download/2026.10.14.2/epic7-mobile-v1.0.4.apk
+releaseUrl=https://cnb.cool/longye-hub/epic7-notices/-/releases/tag/2026.10.15
+downloadUrl=https://cnb.cool/longye-hub/epic7-notices/-/releases/download/2026.10.15/epic7-mobile-v1.0.5.apk
+fallbackUrl=https://github.com/longye-hub/epic7-bookmark-assistant/releases/download/2026.10.15/epic7-mobile-v1.0.5.apk
 sha256=这里填写上传APK的64位十六进制SHA256
 notes=这里写一行公开更新说明
 ```

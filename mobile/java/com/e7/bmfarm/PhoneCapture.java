@@ -29,6 +29,9 @@ public final class PhoneCapture implements AutoCloseable {
  private ImageReader reader;
  private int width,height;
  private volatile boolean closed;
+ private volatile boolean captureStarted;
+ /** True as soon as an explicit frame request starts using this consent. */
+ public boolean hasStarted(){return captureStarted;}
  private Request request;
  private static final class Request {final CountDownLatch done=new CountDownLatch(1);ShopVision.Frame frame;Exception error;}
  public PhoneCapture(Context c,int result,Intent data,java.util.function.Consumer<String> revoked)throws Exception{
@@ -86,7 +89,7 @@ public final class PhoneCapture implements AutoCloseable {
    if(reader!=null)try(Image stale=reader.acquireLatestImage()){}catch(IllegalStateException ignored){}
    request=q;
    try{
-    if(display==null){DisplayMetrics m=metrics();width=m.widthPixels;height=m.heightPixels;reader=createReader(width,height);display=projection.createVirtualDisplay("手机书签助手",width,height,m.densityDpi,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,reader.getSurface(),null,handler);}
+    if(display==null){captureStarted=true;DisplayMetrics m=metrics();width=m.widthPixels;height=m.heightPixels;reader=createReader(width,height);display=projection.createVirtualDisplay("手机书签助手",width,height,m.densityDpi,DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,reader.getSurface(),null,handler);}
     else display.setSurface(reader.getSurface());
    }catch(Exception e){q.error=e;request=null;q.done.countDown();}
   });

@@ -28,7 +28,7 @@ sdkmanager "platforms;android-33" "platforms;android-34" "build-tools;34.0.0"
 
 也可通过 `-JavaHome`、`-SdkRoot` 显式传入路径。特殊 SDK 目录可用 `-BuildToolsPath`、`-RootAndroidJar`、`-MobileAndroidJar` 指定，不需要修改源码。
 
-APK 输出到 `dist/`，临时编译文件在 `build/`。脚本会执行 Java 编译、DEX 转换、资源打包、对齐、签名和验签。运行测试不连接模拟器，也不操作游戏。
+APK 输出到 `dist/`，临时编译文件在 `build/`。脚本会执行 Java 编译、DEX 转换、资源打包、对齐、签名和验签。运行测试不连接模拟器，也不操作游戏。手机版构建还会运行 `scripts/test-rotation.ps1`，对实际编译的 `FloatService` 执行8项共享方向切换回归；Android边界由JVM测试替身提供，测试类不会打包进APK。
 
 ## 签名与更新
 
@@ -36,7 +36,7 @@ APK 输出到 `dist/`，临时编译文件在 `build/`。脚本会执行 Java �
 
 发布者的签名密钥及口令未包含在源码中。自己构建的 APK 与 Release APK 签名不同，不能直接覆盖安装官方包；卸载会丢失应用数据和待核验记录，切换前先人工核实交易并做好必要记录。不要为绕过签名错误盲目清除数据。
 
-两版独立包名允许共存。源码与资源对应公开的 Root v1.5.3 / Mobile v1.0.3；ZIP 元数据、工具版本和签名差异意味着自行构建不保证与 Release 文件 SHA256 相同。
+两版独立包名允许共存。源码与资源对应公开的 Root v1.5.4 / Mobile v1.0.5；ZIP 元数据、工具版本和签名差异意味着自行构建不保证与 Release 文件 SHA256 相同。
 
 ## 测试范围
 
